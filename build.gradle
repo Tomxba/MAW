@@ -1,0 +1,36 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'fr.maw'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.toVersion(25)
+    targetCompatibility = JavaVersion.toVersion(25)
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://central.sonatype.com/repository/maven-snapshots/'
+        content {
+            includeModule 'net.minestom', 'minestom'
+            includeModule 'net.minestom', 'testing'
+        }
+    }
+}
+
+dependencies {
+    compileOnly 'net.minestom:minestom:2026.09.12-26.2'
+    compileOnly 'org.slf4j:slf4j-api:2.0.16'
+    testImplementation 'net.minestom:minestom:2026.09.12-26.2'
+    testImplementation 'org.slf4j:slf4j-api:2.0.16'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
