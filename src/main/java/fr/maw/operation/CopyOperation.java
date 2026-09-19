@@ -23,6 +23,10 @@ public final class CopyOperation {
     private CopyOperation() {}
 
     public static Clipboard execute(Instance instance, Selection selection, Point origin, boolean copyEntities) {
+        return execute((Block.Getter) instance, selection, origin, copyEntities);
+    }
+
+    public static Clipboard execute(Block.Getter getter, Selection selection, Point origin, boolean copyEntities) {
         int ox = origin.blockX();
         int oy = origin.blockY();
         int oz = origin.blockZ();
@@ -34,14 +38,14 @@ public final class CopyOperation {
             int y = p.blockY();
             int z = p.blockZ();
 
-            Block b = instance.getBlock(x, y, z);
+            Block b = getter.getBlock(x, y, z);
             if (!b.air()) {
                 blocks.put(new Vec(x - ox, y - oy, z - oz), b);
             }
         }
 
         List<EntityData> entityDataList = new ArrayList<>();
-        if (copyEntities) {
+        if (copyEntities && getter instanceof Instance instance) {
             int minX = selection.getMinX();
             int maxX = selection.getMaxX();
             int minY = selection.getMinY();

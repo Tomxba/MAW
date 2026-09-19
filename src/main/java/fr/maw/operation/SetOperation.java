@@ -14,6 +14,10 @@ public final class SetOperation {
     private SetOperation() {}
 
     public static long execute(AsyncEditSession session, Selection selection, Pattern pattern) {
+        return execute(session, selection, null, pattern);
+    }
+
+    public static long execute(AsyncEditSession session, Selection selection, fr.maw.pattern.Mask mask, Pattern pattern) {
         long count = 0;
         for (Point p : selection) {
             int x = p.blockX();
@@ -21,9 +25,11 @@ public final class SetOperation {
             int z = p.blockZ();
 
             Block current = session.getBlock(x, y, z);
-            Block next = pattern.apply(x, y, z, current);
-            session.setBlock(x, y, z, next);
-            count++;
+            if (mask == null || mask.test(x, y, z, current)) {
+                Block next = pattern.apply(x, y, z, current);
+                session.setBlock(x, y, z, next);
+                count++;
+            }
         }
         return count;
     }

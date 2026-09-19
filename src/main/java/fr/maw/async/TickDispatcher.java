@@ -90,7 +90,7 @@ public final class TickDispatcher {
                 MinecraftServer.getSchedulerManager().scheduleNextTick(() -> {
                     dispatchProgressively(instance, entries, nextIndex, maxChunksPerTick, boundaryBlocks, updatePhysics, startTime, totalBlocks, totalChunks, future);
                 });
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 // If scheduler is unavailable (e.g. unit tests without full server), continue synchronously
                 dispatchProgressively(instance, entries, nextIndex, maxChunksPerTick, boundaryBlocks, updatePhysics, startTime, totalBlocks, totalChunks, future);
             }

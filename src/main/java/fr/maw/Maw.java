@@ -71,6 +71,20 @@ public final class Maw {
     }
 
     /**
+     * Initializes MAW with custom configuration (without attaching event node immediately).
+     */
+    public static Maw init(MawConfig config) {
+        return init(null, config);
+    }
+
+    /**
+     * Initializes MAW with default configuration.
+     */
+    public static Maw init() {
+        return init(null, MawConfig.defaultConfig());
+    }
+
+    /**
      * Retrieves the active MAW instance.
      */
     public static Maw getInstance() {
@@ -93,8 +107,6 @@ public final class Maw {
         }
 
         // 2. Register all WorldEdit commands
-        CommandManager commandManager = MinecraftServer.getCommandManager();
-
         registeredCommands.add(new WandCommand(config));
         registeredCommands.addAll(PosCommands.create(sessionManager));
         registeredCommands.add(new SetCommand(config, sessionManager, asyncEngine, tickDispatcher));
@@ -105,8 +117,15 @@ public final class Maw {
         registeredCommands.addAll(HistoryCommands.create(sessionManager, asyncEngine, tickDispatcher));
         registeredCommands.addAll(InfoCommands.create(sessionManager));
 
-        for (Command cmd : registeredCommands) {
-            commandManager.register(cmd);
+        try {
+            CommandManager commandManager = MinecraftServer.getCommandManager();
+            if (commandManager != null) {
+                for (Command cmd : registeredCommands) {
+                    commandManager.register(cmd);
+                }
+            }
+        } catch (Throwable t) {
+            LOGGER.debug("MinecraftServer CommandManager unavailable in this environment: {}", t.getMessage());
         }
 
         enabled = true;
@@ -119,9 +138,15 @@ public final class Maw {
     public synchronized void disable() {
         if (!enabled) return;
 
-        CommandManager commandManager = MinecraftServer.getCommandManager();
-        for (Command cmd : registeredCommands) {
-            commandManager.unregister(cmd);
+        try {
+            CommandManager commandManager = MinecraftServer.getCommandManager();
+            if (commandManager != null) {
+                for (Command cmd : registeredCommands) {
+                    commandManager.unregister(cmd);
+                }
+            }
+        } catch (Throwable t) {
+            LOGGER.debug("MinecraftServer CommandManager unavailable during shutdown: {}", t.getMessage());
         }
         registeredCommands.clear();
 
