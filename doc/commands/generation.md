@@ -55,7 +55,63 @@ Le paramètre `radius` peut être :
 
 ---
 
+## `//pyramid` et `//hpyramid`
+*(Alias : `/pyramid`, `/hpyramid`)*
+
+Génère une pyramide pleine ou creuse à degrés dont la pointe s'élève vers le haut.
+
+### Syntaxe
+```text
+//pyramid [-h] <pattern> <taille>
+//hpyramid <pattern> <taille>
+```
+- `<taille>` : Hauteur et demi-largeur de base de la pyramide.
+
+---
+
+## `//cone` et `//hcone`
+*(Alias : `/cone`, `/hcone`)*
+
+Génère un cône circulaire plein ou creux.
+
+### Syntaxe
+```text
+//cone [-h] <pattern> <rayon> <hauteur>
+//hcone <pattern> <rayon> <hauteur>
+```
+
+---
+
+## `//torus` et `//htorus`
+*(Alias : `/torus`, `/htorus`)*
+
+Génère un tore circulaire (forme d'anneau/donut) en 3D.
+
+### Syntaxe
+```text
+//torus [-h] <pattern> <rayon_majeur> <rayon_tube>
+//htorus <pattern> <rayon_majeur> <rayon_tube>
+```
+- `<rayon_majeur>` : Distance du centre au centre du tube.
+- `<rayon_tube>` : Épaisseur du rayon de section circulaire du tube.
+
+---
+
+## `//ellipsoid` et `//hellipsoid`
+*(Alias : `/ellipsoid`, `/hellipsoid`)*
+
+Génère un ellipsoïde 3D plein ou creux selon 3 rayons distincts.
+
+### Syntaxe
+```text
+//ellipsoid [-h] <pattern> <rx> <ry> <rz>
+//hellipsoid <pattern> <rx> <ry> <rz>
+```
+
+---
+
 ## Drapeaux
 - **`-h`** : Génère une forme creuse (coque de 1 bloc).
 - **`-u`** : Active la mise à jour des blocs adjacents.
 - **`-e`** : Gestion des entités dans la zone d'impact.
+

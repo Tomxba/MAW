@@ -85,3 +85,95 @@ Définit la position 2 sur le bloc ciblé par le regard du joueur (raycast jusqu
 ```text
 //hpos2
 ```
+
+---
+
+## `//expand`
+*(Alias : `/expand`, `expand`)*
+
+Étend la sélection cubique active dans une direction donnée.
+
+### Syntaxe
+- `//expand <montant>` : Étend dans la direction du regard du joueur.
+- `//expand <montant> <direction>` : Étend dans la direction spécifiée (`north`, `south`, `east`, `west`, `up`, `down`, `me`).
+- `//expand <montant> <montant_inverse> <direction>` : Étend dans la direction et son opposée.
+- `//expand vert` : Étend la sélection de la couche minimale du monde (-64) jusqu'au plafond (319).
+
+---
+
+## `//contract`
+*(Alias : `/contract`, `contract`)*
+
+Réduit la sélection cubique active dans une direction donnée.
+
+### Syntaxe
+- `//contract <montant>` : Réduit dans la direction du regard.
+- `//contract <montant> <direction>` : Réduit selon la direction spécifiée.
+
+---
+
+## `//shift`
+*(Alias : `/shift`, `shift`)*
+
+Déplace la zone de sélection sans déplacer les blocs du monde.
+
+### Syntaxe
+- `//shift <montant>` : Déplace la boîte dans la direction du regard.
+- `//shift <montant> <direction>` : Déplace la boîte dans la direction indiquée.
+
+---
+
+## `//inset`
+*(Alias : `/inset`, `inset`)*
+
+Rétrécit la boîte de sélection uniformément sur tous les côtés (ou uniquement horizontalement avec `-h`, verticalement avec `-v`).
+
+### Syntaxe
+```text
+//inset [-h|-v] <montant>
+```
+
+---
+
+## `//outset`
+*(Alias : `/outset`, `outset`)*
+
+Étend la boîte de sélection uniformément sur tous les côtés (ou uniquement horizontalement avec `-h`, verticalement avec `-v`).
+
+### Syntaxe
+```text
+//outset [-h|-v] <montant>
+```
+
+---
+
+## `//chunk`
+*(Alias : `/chunk`, `chunk`)*
+
+Sélectionne l'intégralité du chunk (16x16 de Y=-64 à Y=319) dans lequel se trouve le joueur.
+
+### Syntaxe
+```text
+//chunk
+```
+
+---
+
+## `//sel` / `//desel`
+*(Alias : `/sel`, `/desel`)*
+
+- `//sel cuboid` : Définit le mode de sélection cubique.
+- `//desel` : Désélectionne la zone actuelle en réinitialisant pos1 et pos2.
+
+---
+
+## `//distr`
+*(Alias : `/distr`, `distr`)*
+
+Analyse la sélection et affiche la distribution des blocs sous forme de statistiques (nombre de blocs, pourcentages par type).
+
+### Syntaxe
+```text
+//distr
+```
+

@@ -34,3 +34,13 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Lets a project on the same machine depend on MAW: `./gradlew publishToMavenLocal`, then
+// implementation 'fr.maw:maw:<version>' with mavenLocal() among the repositories. JitPack runs this same task.
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}

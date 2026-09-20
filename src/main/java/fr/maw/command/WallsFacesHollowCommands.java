@@ -102,7 +102,7 @@ public final class WallsFacesHollowCommands {
         asyncEngine.runAsync(() -> {
             try {
                 SurroundingObjectHandler.handlePreBlockChanges(instance, selection, manageEntities);
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation(), selection);
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), selection);
                 WallsOperation.execute(editSession, selection, pattern);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {
@@ -154,7 +154,7 @@ public final class WallsFacesHollowCommands {
         asyncEngine.runAsync(() -> {
             try {
                 SurroundingObjectHandler.handlePreBlockChanges(instance, selection, manageEntities);
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation(), selection);
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), selection);
                 FacesOperation.execute(editSession, selection, pattern);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {
@@ -221,7 +221,7 @@ public final class WallsFacesHollowCommands {
         asyncEngine.runAsync(() -> {
             try {
                 SurroundingObjectHandler.handlePreBlockChanges(instance, selection, manageEntities);
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation(), selection);
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), selection);
                 HollowOperation.execute(editSession, selection, finalThickness, finalInterior);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {

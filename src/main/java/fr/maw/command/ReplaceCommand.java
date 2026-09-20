@@ -96,7 +96,7 @@ public final class ReplaceCommand extends Command {
                 try {
                     SurroundingObjectHandler.handlePreBlockChanges(instance, selection, manageEntities);
 
-                    AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation(), selection);
+                    AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), selection);
                     ReplaceOperation.execute(editSession, selection, mask, pattern);
 
                     editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {

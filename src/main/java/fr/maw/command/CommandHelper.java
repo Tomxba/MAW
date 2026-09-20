@@ -1,5 +1,9 @@
 package fr.maw.command;
 
+import fr.maw.MawConfig;
+import fr.maw.async.AsyncEditSession;
+import fr.maw.guard.EditGuard;
+import fr.maw.selection.Selection;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.command.CommandSender;
@@ -51,6 +55,22 @@ public final class CommandHelper {
             }
         }
         return null;
+    }
+
+    /**
+     * Opens the edit session of a player's operation, under the rules of the {@link EditGuard} of the
+     * configuration: a block it refuses is skipped, and the player is told how many once the operation ends.
+     * With the default guard (allow everything) the session has no rule and costs nothing more.
+     */
+    public static AsyncEditSession newSession(MawConfig config, Player player, Instance instance, int maxBlocks, Selection selection) {
+        AsyncEditSession session = new AsyncEditSession(instance, maxBlocks, selection);
+        EditGuard guard = config.editGuard();
+        if (guard != EditGuard.ALLOW_ALL) {
+            session.setGate(
+                    (x, y, z, block) -> guard.allowsChange(player, instance, x, y, z, block),
+                    refused -> sendInfo(player, String.format("%,d block(s) were not changed: you cannot edit there or with these blocks.", refused)));
+        }
+        return session;
     }
 
     public static boolean hasFlag(String[] args, String flag) {

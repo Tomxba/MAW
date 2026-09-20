@@ -24,6 +24,14 @@ public final class PlayerSession {
     private boolean updatePhysics;
     private boolean manageEntities;
 
+    // Interactive tools and brushes
+    private final java.util.Map<String, fr.maw.tool.Tool> boundTools = new java.util.concurrent.ConcurrentHashMap<>();
+    private fr.maw.pattern.Mask brushMask;
+    private fr.maw.pattern.Mask globalMask;
+    private int brushSize = 2;
+    private int brushRange = 100;
+    private boolean fastMode = false;
+
     public PlayerSession(UUID uuid, MawConfig config) {
         this.uuid = Objects.requireNonNull(uuid, "uuid cannot be null");
         this.historyManager = new HistoryManager(config.maxHistoryPerPlayer());
@@ -88,5 +96,64 @@ public final class PlayerSession {
 
     public synchronized void setManageEntities(boolean manageEntities) {
         this.manageEntities = manageEntities;
+    }
+
+    public void bindTool(String itemNamespace, fr.maw.tool.Tool tool) {
+        if (itemNamespace == null || tool == null) return;
+        boundTools.put(itemNamespace.toLowerCase(java.util.Locale.ROOT), tool);
+    }
+
+    public fr.maw.tool.Tool getTool(String itemNamespace) {
+        if (itemNamespace == null) return null;
+        return boundTools.get(itemNamespace.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public void unbindTool(String itemNamespace) {
+        if (itemNamespace == null) return;
+        boundTools.remove(itemNamespace.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public void clearTools() {
+        boundTools.clear();
+    }
+
+    public synchronized fr.maw.pattern.Mask getBrushMask() {
+        return brushMask;
+    }
+
+    public synchronized void setBrushMask(fr.maw.pattern.Mask brushMask) {
+        this.brushMask = brushMask;
+    }
+
+    public synchronized fr.maw.pattern.Mask getGlobalMask() {
+        return globalMask;
+    }
+
+    public synchronized void setGlobalMask(fr.maw.pattern.Mask globalMask) {
+        this.globalMask = globalMask;
+    }
+
+    public synchronized int getBrushSize() {
+        return brushSize;
+    }
+
+    public synchronized void setBrushSize(int brushSize) {
+        this.brushSize = Math.max(1, Math.min(brushSize, 50));
+    }
+
+    public synchronized int getBrushRange() {
+        return brushRange;
+    }
+
+    public synchronized void setBrushRange(int brushRange) {
+        this.brushRange = Math.max(1, Math.min(brushRange, 200));
+    }
+
+    public synchronized boolean isFastMode() {
+        return fastMode;
+    }
+
+    public synchronized void setFastMode(boolean fastMode) {
+        this.fastMode = fastMode;
     }
 }

@@ -83,7 +83,7 @@ public final class SetCommand extends Command {
                 try {
                     SurroundingObjectHandler.handlePreBlockChanges(instance, selection, manageEntities);
 
-                    AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation(), selection);
+                    AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), selection);
                     SetOperation.execute(editSession, selection, pattern);
 
                     editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {

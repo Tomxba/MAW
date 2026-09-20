@@ -117,7 +117,7 @@ public final class SphereCylCommands {
 
         asyncEngine.runAsync(() -> {
             try {
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation());
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), null);
                 SphereOperation.execute(editSession, center, radiusX, radiusY, radiusZ, hollow, pattern);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {
@@ -188,7 +188,7 @@ public final class SphereCylCommands {
         int finalHeight = height;
         asyncEngine.runAsync(() -> {
             try {
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation());
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), null);
                 CylinderOperation.execute(editSession, center, radiusX, radiusZ, finalHeight, hollow, pattern);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {

@@ -1,5 +1,7 @@
 package fr.maw;
 
+import fr.maw.guard.EditGuard;
+
 import java.util.Objects;
 
 /**
@@ -15,8 +17,10 @@ public final class MawConfig {
     private final boolean defaultManageEntities;
     private final String wandItemNamespace;
     private final int asyncWorkerThreads;
+    private final EditGuard editGuard;
 
     private MawConfig(Builder builder) {
+        this.editGuard = Objects.requireNonNull(builder.editGuard, "editGuard cannot be null");
         this.maxBlocksPerOperation = builder.maxBlocksPerOperation;
         this.maxHistoryPerPlayer = builder.maxHistoryPerPlayer;
         this.timeBudgetPerTickMs = builder.timeBudgetPerTickMs;
@@ -67,7 +71,14 @@ public final class MawConfig {
         return asyncWorkerThreads;
     }
 
+    /** Who may change what; {@link EditGuard#ALLOW_ALL} unless a guard was set. */
+    public EditGuard editGuard() {
+        return editGuard;
+    }
+
     public static final class Builder {
+        private EditGuard editGuard = EditGuard.ALLOW_ALL;
+
         private int maxBlocksPerOperation = 10_000_000;
         private int maxHistoryPerPlayer = 20;
         private int timeBudgetPerTickMs = 5;
@@ -114,6 +125,14 @@ public final class MawConfig {
 
         public Builder asyncWorkerThreads(int asyncWorkerThreads) {
             this.asyncWorkerThreads = asyncWorkerThreads;
+            return this;
+        }
+
+        /**
+         * Restricts who may edit and where (see {@link EditGuard}). Without it every player edits everywhere.
+         */
+        public Builder editGuard(EditGuard editGuard) {
+            this.editGuard = editGuard;
             return this;
         }
 

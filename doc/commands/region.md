@@ -99,8 +99,115 @@ Construit les 6 faces extérieures (murs + sol + plafond) de la sélection, form
 
 ---
 
+## `//move`
+*(Alias : `/move`, `move`)*
+
+Déplace les blocs de la sélection active dans une direction donnée, en effaçant l'emplacement d'origine (remplacé par de l'air).
+
+### Syntaxe
+```text
+//move [distance] [direction]
+```
+- `[distance]` : Nombre de blocs de déplacement (par défaut 1).
+- `[direction]` : `north`, `south`, `east`, `west`, `up`, `down`, ou direction du regard par défaut.
+
+---
+
+## `//stack`
+*(Alias : `/stack`, `stack`)*
+
+Répète la sélection active un certain nombre de fois dans une direction donnée.
+
+### Syntaxe
+```text
+//stack [répétitions] [direction]
+```
+
+---
+
+## `//naturalize`
+*(Alias : `/naturalize`, `naturalize`)*
+
+Régénère un profil de sol naturel sur le relief de la sélection : 1 couche supérieure d'herbe, 3 couches de terre en-dessous, et de la pierre pour le reste.
+
+### Syntaxe
+```text
+//naturalize
+```
+
+---
+
+## `//overlay`
+*(Alias : `/overlay`, `overlay`)*
+
+Pose un motif de bloc sur toutes les surfaces exposées vers le haut dans la sélection (ex: déposer de la neige ou de la mousse sur le relief).
+
+### Syntaxe
+```text
+//overlay <pattern>
+```
+
+---
+
+## `//smooth`
+*(Alias : `/smooth`, `smooth`)*
+
+Lisse et adoucit les variations brusques de hauteur du terrain dans la sélection.
+
+### Syntaxe
+```text
+//smooth [itérations]
+```
+
+---
+
+## `//line`
+*(Alias : `/line`, `line`)*
+
+Trace une ligne droite 3D entre la position 1 et la position 2 avec l'algorithme de Bresenham 3D.
+
+### Syntaxe
+```text
+//line <pattern> [épaisseur]
+```
+
+---
+
+## `//center`
+*(Alias : `/center`, `center`)*
+
+Identifie et remplit le bloc ou les blocs situés au centre exact de la boîte englobante.
+
+### Syntaxe
+```text
+//center <pattern>
+```
+
+---
+
+## `//fall`
+*(Alias : `/fall`, `fall`)*
+
+Fait chuter tous les blocs suspendus dans le vide de la sélection vers le sol le plus bas.
+
+### Syntaxe
+```text
+//fall
+```
+
+---
+
+## `//forest` / `//flora`
+*(Alias : `/forest`, `forest`, `/flora`, `flora`)*
+
+- `//forest [type] [densité]` : Plante des arbres adaptés (oak, birch, spruce, jungle, etc.) sur les surfaces viables.
+- `//flora [densité]` : Fait pousser un tapis d'herbes hautes et de fleurs sauvages sur les surfaces d'herbe.
+
+---
+
 ## Drapeaux (-u et -e)
 
 Toutes les commandes de région supportent les drapeaux :
 - **`-u` (Update)** : Déclenche la mise à jour des blocs adjacents (connexions de barrières, vitres, escaliers, etc.). Désactivé par défaut pour préserver les performances.
 - **`-e` (Entities)** : Active la gestion avancée des entités de la zone (suppression des entités dépendantes des blocs détruits).
+

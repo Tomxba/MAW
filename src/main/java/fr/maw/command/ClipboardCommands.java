@@ -120,7 +120,7 @@ public final class ClipboardCommands {
 
         asyncEngine.runAsync(() -> {
             try {
-                AsyncEditSession editSession = new AsyncEditSession(instance, config.maxBlocksPerOperation());
+                AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), null);
                 PasteOperation.execute(editSession, clipboard, target, ignoreAir, pasteEntities);
 
                 editSession.commit(dispatcher, updatePhysics, pasteEntities).thenAccept(result -> {

@@ -1,6 +1,7 @@
 package fr.maw.async;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * High performance asynchronous execution engine for MAW calculations and background chunk preparation.
@@ -8,6 +9,7 @@ import java.util.concurrent.*;
 public final class MawAsyncEngine {
 
     private final ExecutorService executorService;
+    private final AtomicInteger activeTasks = new AtomicInteger();
 
     public MawAsyncEngine(int workerThreads) {
         // Use Java 21+ Virtual Threads executor for zero thread contention and massive concurrency
@@ -19,14 +21,22 @@ public final class MawAsyncEngine {
      */
     public <T> CompletableFuture<T> supplyAsync(Callable<T> task) {
         CompletableFuture<T> future = new CompletableFuture<>();
-        executorService.submit(() -> {
-            try {
-                T result = task.call();
-                future.complete(result);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        activeTasks.incrementAndGet();
+        try {
+            executorService.submit(() -> {
+                try {
+                    T result = task.call();
+                    future.complete(result);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                } finally {
+                    activeTasks.decrementAndGet();
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            activeTasks.decrementAndGet();
+            throw e;
+        }
         return future;
     }
 
@@ -34,7 +44,26 @@ public final class MawAsyncEngine {
      * Submits an asynchronous runnable.
      */
     public CompletableFuture<Void> runAsync(Runnable runnable) {
-        return CompletableFuture.runAsync(runnable, executorService);
+        activeTasks.incrementAndGet();
+        try {
+            return CompletableFuture.runAsync(() -> {
+                try {
+                    runnable.run();
+                } finally {
+                    activeTasks.decrementAndGet();
+                }
+            }, executorService);
+        } catch (RejectedExecutionException e) {
+            activeTasks.decrementAndGet();
+            throw e;
+        }
+    }
+
+    /**
+     * Whether a task submitted to this engine is still running (computing an operation).
+     */
+    public boolean hasActiveTasks() {
+        return activeTasks.get() > 0;
     }
 
     /**

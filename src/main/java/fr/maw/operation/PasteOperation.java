@@ -22,6 +22,15 @@ public final class PasteOperation {
             AsyncEditSession session,
             Clipboard clipboard,
             Point targetOrigin,
+            boolean ignoreAir
+    ) {
+        return execute(session, clipboard, targetOrigin, ignoreAir, false);
+    }
+
+    public static long execute(
+            AsyncEditSession session,
+            Clipboard clipboard,
+            Point targetOrigin,
             boolean ignoreAir,
             boolean pasteEntities
     ) {

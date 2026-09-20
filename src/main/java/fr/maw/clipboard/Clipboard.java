@@ -27,6 +27,10 @@ public final class Clipboard {
         this(blocks, Collections.emptyList(), origin, dimensions);
     }
 
+    public Clipboard(Map<Point, Block> blocks, Point origin, int width, int height, int length) {
+        this(blocks, Collections.emptyList(), origin, new Vec(width, height, length));
+    }
+
     public Map<Point, Block> getBlocks() {
         return blocks;
     }
@@ -45,6 +49,26 @@ public final class Clipboard {
 
     public int getBlockCount() {
         return blocks.size();
+    }
+
+    public int size() {
+        return blocks.size();
+    }
+
+    public boolean isEmpty() {
+        return blocks.isEmpty();
+    }
+
+    public int getWidth() {
+        return dimensions.blockX();
+    }
+
+    public int getHeight() {
+        return dimensions.blockY();
+    }
+
+    public int getLength() {
+        return dimensions.blockZ();
     }
 
     public boolean hasEntities() {
