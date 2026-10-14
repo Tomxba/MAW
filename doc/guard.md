@@ -41,7 +41,10 @@ public interface EditGuard {
 > `canEdit` n'est appliquée que si `Maw.init(...)` reçoit le gestionnaire d'événements du serveur (le premier argument) : c'est lui qui permet d'écouter les commandes tapées. Sans lui, MAW le signale au démarrage et seule `allowsChange` est appliquée.
 
 > [!NOTE]
-> Une opération lit l'ancien bloc d'une position avant de savoir si elle a le droit d'y écrire. Un chunk qui n'est **pas chargé** se lit donc comme du **vide** (de l'air) au lieu de faire échouer l'opération : une sélection peut dépasser le monde qui existe, et c'est `allowsChange` qui refuse alors ses blocs. Écrire dans un chunk non chargé reste à la charge du serveur (chargez la zone d'édition à l'avance).
+> Une opération lit l'ancien bloc d'une position avant de savoir si elle a le droit d'y écrire. Quand le chunk n'est pas en mémoire, cette lecture dépend du monde : si l'instance accepte les chunks chargés à la demande (`Instance#hasEnabledAutoChunkLoad`, le défaut), MAW **charge le chunk et lit le vrai bloc** ; si elle le refuse (l'Atelier : une map fait exactement sa zone de construction), le chunk se lit comme du **vide** (de l'air), une sélection pouvant dépasser le monde qui existe, et c'est `allowsChange` qui refuse alors ses blocs. Aucune lecture ne fait donc grandir un monde qui refuse d'être chargé à la demande.
+
+> [!NOTE]
+> À l'écriture, MAW **charge toujours** les chunks d'une opération : un changement qu'un joueur a demandé et que le garde a autorisé doit avoir lieu, ou dire pourquoi il ne peut pas. Un chunk que le monde refuse de charger fait échouer l'opération en le nommant (`ChunkNotLoadedException`), au lieu de ne rien changer en silence.
 
 `//undo` et `//redo` ne passent pas par `allowsChange` : ils rétablissent ce que le joueur a déjà écrit, sous le contrôle de `canEdit`.
 

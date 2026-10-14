@@ -40,17 +40,21 @@ Génère un cylindre plein ou creux dont la base est centrée sur la position du
 
 ### Syntaxe
 - `//cyl [-h] <pattern> <radius> [hauteur] [-u] [-e]`
-- `//hcyl <pattern> <radius> [hauteur] [-u] [-e]`
+- `//hcyl <pattern> <radius> [hauteur] [epaisseur] [-u] [-e]`
 
 Le paramètre `radius` peut être :
 - Une valeur unique pour un cercle parfait (ex: `8`).
 - Deux valeurs séparées par une virgule pour une base elliptique : `rx,rz` (ex: `12,6`).
 
-`hauteur` est optionnel (valeur par défaut : 1 bloc).
+`hauteur` est optionnel (valeur par défaut : 1 bloc) et part de la base, sous les pieds du joueur.
+
+`epaisseur` est l'épaisseur du **mur** d'un cylindre creux, en blocs : 1 par défaut, comme le `//hcyl` de WorldEdit. `//hcyl stone 10 20 3` construit donc un tube de rayon 10, de 20 blocs de haut, dont la paroi fait 3 blocs. Une épaisseur qui atteint l'axe remplit le cylindre, exactement comme un cylindre plein. Sur un `//cyl` plein (sans `-h`), elle n'aurait pas de sens : la commande la refuse et propose `//hcyl`.
 
 ### Exemples
 - `//cyl stone 5 10` : Génère un cylindre plein de rayon 5 et de hauteur 10 blocs en pierre.
-- `//hcyl glass 10 20` : Génère une tour cylindrique creuse en verre de hauteur 20 blocs.
+- `//hcyl glass 10 20` : Génère une tour cylindrique creuse en verre de hauteur 20 blocs, avec une paroi d'un bloc.
+- `//hcyl stone 10 20 3` : La même tour, avec une paroi de 3 blocs d'épaisseur.
+- `//cyl -h stone 6 30 2` : Le même cylindre creux, par le drapeau `-h`.
 - `//cyl water 10` : Crée un disque d'eau d'un bloc de hauteur.
 
 ---

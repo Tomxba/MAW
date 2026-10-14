@@ -152,15 +152,21 @@ public final class Maw {
             }
         }
 
+        CommandManager commandManager = null;
         try {
-            CommandManager commandManager = MinecraftServer.getCommandManager();
-            if (commandManager != null) {
-                for (Command cmd : registeredCommands) {
-                    commandManager.register(cmd);
-                }
-            }
+            commandManager = MinecraftServer.getCommandManager();
         } catch (Throwable t) {
             LOGGER.debug("MinecraftServer CommandManager unavailable in this environment: {}", t.getMessage());
+        }
+        if (commandManager != null) {
+            // one by one: a command whose name is already taken must not keep the ones after it from being registered
+            for (Command cmd : registeredCommands) {
+                try {
+                    commandManager.register(cmd);
+                } catch (Throwable t) {
+                    LOGGER.warn("MAW command {} was not registered: {}", cmd.getName(), t.getMessage());
+                }
+            }
         }
 
         enabled = true;

@@ -64,6 +64,9 @@ public final class CommandHelper {
      */
     public static AsyncEditSession newSession(MawConfig config, Player player, Instance instance, int maxBlocks, Selection selection) {
         AsyncEditSession session = new AsyncEditSession(instance, maxBlocks, selection);
+        // A change that could not be written is said out loud: a player waiting for a result that never
+        // comes has no way to know whether the world changed.
+        session.setProblemReporter(message -> sendError(player, message));
         EditGuard guard = config.editGuard();
         if (guard != EditGuard.ALLOW_ALL) {
             session.setGate(

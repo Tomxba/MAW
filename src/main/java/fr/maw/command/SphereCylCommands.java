@@ -54,7 +54,7 @@ public final class SphereCylCommands {
         }, cylArg);
 
         Command hcyl = new Command("//hcyl", "/hcyl", "hcyl");
-        hcyl.setDefaultExecutor((sender, context) -> CommandHelper.sendError(sender, "Usage: //hcyl <pattern> <radius> [height] [-u] [-e]"));
+        hcyl.setDefaultExecutor((sender, context) -> CommandHelper.sendError(sender, "Usage: //hcyl <pattern> <radius> [height] [thickness] [-u] [-e]"));
         var hcylArg = ArgumentType.StringArray("args");
         hcyl.addSyntax((sender, context) -> {
             if (!(sender instanceof Player player)) return;
@@ -80,12 +80,7 @@ public final class SphereCylCommands {
         boolean updatePhysics = CommandHelper.hasFlag(rawArgs, "-u");
         boolean manageEntities = CommandHelper.hasFlag(rawArgs, "-e");
 
-        List<String> cleaned = new ArrayList<>();
-        for (String a : rawArgs) {
-            if (!a.equalsIgnoreCase("-h") && !a.equalsIgnoreCase("-u") && !a.equalsIgnoreCase("-e")) {
-                cleaned.add(a);
-            }
-        }
+        List<String> cleaned = clean(rawArgs);
 
         if (cleaned.size() < 2) {
             CommandHelper.sendError(player, "Usage: //sphere [-h] <pattern> <radius>");
@@ -130,6 +125,11 @@ public final class SphereCylCommands {
         });
     }
 
+    /**
+     * A cylinder at the player's feet: {@code //cyl [-h] <pattern> <radius> [height] [thickness] [-u] [-e]}.
+     * The fourth argument is the thickness of the wall of a hollow cylinder, so
+     * {@code //hcyl stone 10 20 3} builds a tube of radius 10, 20 blocks tall, with a wall of 3 blocks.
+     */
     private static void handleCyl(
             Player player,
             String[] rawArgs,
@@ -146,21 +146,17 @@ public final class SphereCylCommands {
         boolean updatePhysics = CommandHelper.hasFlag(rawArgs, "-u");
         boolean manageEntities = CommandHelper.hasFlag(rawArgs, "-e");
 
-        List<String> cleaned = new ArrayList<>();
-        for (String a : rawArgs) {
-            if (!a.equalsIgnoreCase("-h") && !a.equalsIgnoreCase("-u") && !a.equalsIgnoreCase("-e")) {
-                cleaned.add(a);
-            }
-        }
+        List<String> cleaned = clean(rawArgs);
 
         if (cleaned.size() < 2) {
-            CommandHelper.sendError(player, "Usage: //cyl [-h] <pattern> <radius> [height]");
+            CommandHelper.sendError(player, "Usage: //cyl [-h] <pattern> <radius> [height] [-u] [-e] | //hcyl <pattern> <radius> [height] [thickness]");
             return;
         }
 
         Pattern pattern;
         double radiusX, radiusZ;
         int height = 1;
+        int thickness = 1;
 
         try {
             pattern = PatternParser.parsePattern(cleaned.get(0));
@@ -176,28 +172,53 @@ public final class SphereCylCommands {
             if (cleaned.size() >= 3) {
                 height = Integer.parseInt(cleaned.get(2));
             }
+            if (cleaned.size() >= 4) {
+                thickness = Integer.parseInt(cleaned.get(3));
+            }
         } catch (Exception e) {
             CommandHelper.sendError(player, "Invalid arguments: " + e.getMessage());
             return;
         }
 
+        if (cleaned.size() >= 4 && !hollow) {
+            // A thickness says how thick the wall of a hollow cylinder is: on a solid one it would mean
+            // nothing, and silently ignoring it would leave the player with a shape they did not ask for.
+            CommandHelper.sendError(player, cleaned.get(3) + " is the thickness of the wall of a hollow cylinder:"
+                    + " use //hcyl or //cyl -h, e.g. //hcyl " + cleaned.get(0) + " " + cleaned.get(1) + " "
+                    + cleaned.get(2) + " " + cleaned.get(3));
+            return;
+        }
+
         Point center = player.getPosition();
         PlayerSession playerSession = sessionManager.getSession(player);
-        CommandHelper.sendInfo(player, "Generating cylinder...");
+        String what = hollow ? "Hollow cylinder (wall of " + Math.max(1, thickness) + " block(s))" : "Cylinder";
+        CommandHelper.sendInfo(player, "Generating " + what.toLowerCase(java.util.Locale.ROOT) + "...");
 
         int finalHeight = height;
+        int finalThickness = thickness;
         asyncEngine.runAsync(() -> {
             try {
                 AsyncEditSession editSession = CommandHelper.newSession(config, player, instance, config.maxBlocksPerOperation(), null);
-                CylinderOperation.execute(editSession, center, radiusX, radiusZ, finalHeight, hollow, pattern);
+                CylinderOperation.execute(editSession, center, radiusX, radiusZ, finalHeight, hollow, pattern, finalThickness);
 
                 editSession.commit(dispatcher, updatePhysics, manageEntities).thenAccept(result -> {
                     playerSession.getHistoryManager().record(editSession.createChangeSet());
-                    CommandHelper.sendSuccess(player, "Cylinder generated: " + result.toString());
+                    CommandHelper.sendSuccess(player, what + " generated: " + result.toString());
                 });
             } catch (Exception e) {
                 CommandHelper.sendError(player, "Failed to generate cylinder: " + e.getMessage());
             }
         });
+    }
+
+    /** The arguments of a shape without its flags ({@code -h}, {@code -u}, {@code -e}). */
+    private static List<String> clean(String[] rawArgs) {
+        List<String> cleaned = new ArrayList<>();
+        for (String a : rawArgs) {
+            if (!a.equalsIgnoreCase("-h") && !a.equalsIgnoreCase("-u") && !a.equalsIgnoreCase("-e")) {
+                cleaned.add(a);
+            }
+        }
+        return cleaned;
     }
 }

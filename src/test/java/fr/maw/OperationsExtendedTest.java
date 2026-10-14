@@ -215,4 +215,57 @@ public class OperationsExtendedTest {
         assertEquals(Block.STONE, blocks.get(new Vec(0, 0, 0)));
         assertNull(blocks.get(new Vec(1, 0, 0)));
     }
+
+    @Test
+    @DisplayName("Should generate a hollow cylinder with the wall thickness asked for")
+    public void should_generate_a_hollow_cylinder_with_a_given_wall_thickness() {
+        // Arrange
+        InMemoryWorld world = new InMemoryWorld();
+        Point baseCenter = new Vec(0, 0, 0);
+
+        // //hcyl stone 8 3 2 : radius 8, height 3, a wall of 2 blocks
+        AsyncEditSession twoBlocksThick = new AsyncEditSession(world, 100_000);
+        CylinderOperation.execute(twoBlocksThick, baseCenter, 8, 8, 3, true, new SingleBlockPattern(Block.STONE), 2);
+
+        // //hcyl stone 8 3 : the single-block wall of WorldEdit
+        AsyncEditSession oneBlockThick = new AsyncEditSession(world, 100_000);
+        CylinderOperation.execute(oneBlockThick, baseCenter, 8, 8, 3, true, new SingleBlockPattern(Block.STONE), 1);
+
+        // Assert - along the centre line the wall spans x = 6..7 with a thickness of 2, and x = 7 alone with 1
+        java.util.Map<Point, Block> thick = allBlocksOf(twoBlocksThick);
+        java.util.Map<Point, Block> thin = allBlocksOf(oneBlockThick);
+
+        for (int y = 0; y <= 2; y++) {
+            assertNotNull(thick.get(new Vec(6, y, 0)), "the inner face of the 2-block wall (y=" + y + ")");
+            assertNotNull(thick.get(new Vec(7, y, 0)), "the outer face of the 2-block wall (y=" + y + ")");
+            assertNull(thick.get(new Vec(5, y, 0)), "inside the hole (y=" + y + ")");
+            assertNull(thick.get(new Vec(8, y, 0)), "outside the cylinder (y=" + y + ")");
+            assertNull(thick.get(new Vec(0, y, 0)), "the axis is hollow (y=" + y + ")");
+
+            assertNotNull(thin.get(new Vec(7, y, 0)), "the single wall is still there (y=" + y + ")");
+            assertNull(thin.get(new Vec(6, y, 0)), "a thickness of 1 is thinner than a thickness of 2 (y=" + y + ")");
+        }
+    }
+
+    @Test
+    @DisplayName("A wall as thick as the radius fills the hollow cylinder")
+    public void should_fill_a_hollow_cylinder_whose_wall_reaches_the_axis() {
+        InMemoryWorld world = new InMemoryWorld();
+        Point baseCenter = new Vec(0, 0, 0);
+
+        AsyncEditSession session = new AsyncEditSession(world, 100_000);
+        CylinderOperation.execute(session, baseCenter, 4, 4, 2, true, new SingleBlockPattern(Block.STONE), 4);
+
+        java.util.Map<Point, Block> blocks = allBlocksOf(session);
+
+        assertNotNull(blocks.get(new Vec(0, 1, 0)), "no hole is left: the axis is filled");
+        assertNotNull(blocks.get(new Vec(3, 1, 0)), "the outer blocks are still there");
+    }
+
+    /** Every block queued by a session, wherever its chunks are. */
+    private static java.util.Map<Point, Block> allBlocksOf(AsyncEditSession session) {
+        java.util.Map<Point, Block> blocks = new java.util.HashMap<>();
+        session.getChangeQueue().getChunkEntries().forEach(entry -> blocks.putAll(entry.blocks()));
+        return blocks;
+    }
 }

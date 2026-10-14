@@ -7,9 +7,13 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
 /**
@@ -17,6 +21,8 @@ import java.util.function.LongConsumer;
  * Records block changes, enforces limits, sorts blocks by chunk and prepares ChangeSets.
  */
 public final class AsyncEditSession {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncEditSession.class);
 
     public static class MaxBlocksExceededException extends RuntimeException {
         public MaxBlocksExceededException(String message) {
@@ -31,12 +37,15 @@ public final class AsyncEditSession {
     private final List<BlockChange> recordedChanges = new ArrayList<>();
     private final Set<Point> boundaryBlocks = new HashSet<>();
     private final Selection bounds;
+    /** The chunks this session could not load (packed coordinates): asked once, not once per block. */
+    private final Set<Long> unloadable = ConcurrentHashMap.newKeySet();
 
     private long changedCount = 0;
     private long refusedCount = 0;
     private boolean closed = false;
     private BlockGate gate;
     private LongConsumer refusalReporter;
+    private Consumer<String> problemReporter;
 
     /**
      * Decides, block by block, whether a change may be recorded: a block it refuses is skipped and
@@ -72,12 +81,33 @@ public final class AsyncEditSession {
     }
 
     /**
-     * The block at a position. A chunk that is not loaded reads as air: an operation may reach past the
-     * world that exists (a selection can be larger than it, and a guard that confines an operation to a
-     * region still needs the old block of a position before it can refuse it), and that is not an error.
+     * The block at a position: the real block, or air when its chunk is not in memory.
+     * <p>
+     * A world that accepts chunks loaded on demand ({@link Instance#hasEnabledAutoChunkLoad()}) has the chunk
+     * loaded first and its block read: an operation that decides from the old block — a mask, a
+     * {@code //replace}, an undo — would otherwise see air and change nothing. A world that refuses it (the
+     * Atelier: a map is exactly its build area) keeps the old rule, so an operation can never make it grow.
+     * A chunk that cannot be loaded is remembered, so it is asked once instead of once per block.
      */
     public Block getBlock(int x, int y, int z) {
-        if (instance != null && instance.getChunk(x >> 4, z >> 4) == null) {
+        Instance instance = this.instance;
+        if (instance == null || instance.getChunk(x >> 4, z >> 4) != null) {
+            return blockGetter.getBlock(x, y, z);
+        }
+        return readFromChunkThatIsNotInMemory(instance, x, y, z);
+    }
+
+    private Block readFromChunkThatIsNotInMemory(Instance instance, int x, int y, int z) {
+        int chunkX = x >> 4;
+        int chunkZ = z >> 4;
+        if (!instance.hasEnabledAutoChunkLoad() || unloadable.contains(ChunkCoordinate.pack(chunkX, chunkZ))) {
+            return Block.AIR;
+        }
+        if (ChunkPreloader.load(instance, chunkX, chunkZ) == null) {
+            if (unloadable.add(ChunkCoordinate.pack(chunkX, chunkZ))) {
+                LOGGER.warn("MAW could not load the chunk ({}, {}) of instance {} to read its blocks: they read as air.",
+                        chunkX, chunkZ, instance.getUuid());
+            }
             return Block.AIR;
         }
         return blockGetter.getBlock(x, y, z);
@@ -159,6 +189,14 @@ public final class AsyncEditSession {
         this.refusalReporter = refusalReporter;
     }
 
+    /**
+     * Sets what to do when the changes could not be written (typically: tell the player). Without it a failed
+     * write leaves the player waiting for a result that never comes, with no way to know what happened.
+     */
+    public synchronized void setProblemReporter(Consumer<String> problemReporter) {
+        this.problemReporter = problemReporter;
+    }
+
     /** How many blocks the {@link BlockGate} refused so far. */
     public synchronized long getRefusedCount() {
         return refusedCount;
@@ -176,12 +214,21 @@ public final class AsyncEditSession {
         CompletableFuture<EditResult> result = dispatcher.dispatch(instance, changeQueue, boundaryBlocks, createChangeSet(), updatePhysics, manageEntities);
         long refused;
         LongConsumer reporter;
+        Consumer<String> problem;
         synchronized (this) {
             refused = refusedCount;
             reporter = refusalReporter;
+            problem = problemReporter;
         }
         if (refused > 0 && reporter != null) {
             result.whenComplete((done, failure) -> reporter.accept(refused));
+        }
+        if (problem != null) {
+            result.whenComplete((done, failure) -> {
+                if (failure != null) {
+                    problem.accept(TickDispatcher.describeFailure(failure));
+                }
+            });
         }
         return result;
     }

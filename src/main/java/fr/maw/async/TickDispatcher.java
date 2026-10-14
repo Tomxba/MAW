@@ -11,15 +11,25 @@ import net.minestom.server.instance.block.Block;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Dispatcher that applies chunk block changes to a Minestom Instance.
  * Supports Time-Budgeting across ticks to ensure zero server TPS drop.
+ * <p>
+ * The chunks a dispatch is about to write are loaded first ({@link ChunkPreloader}): Minestom drops a batch
+ * aimed at a chunk that is not loaded, and never reports back about it, so without that step an operation over
+ * a large area — or an undo of one — can end up doing nothing at all without failing.
  */
 public final class TickDispatcher {
+
+    /** How long a batch is given to write its blocks before the operation is declared lost. */
+    private static final long WRITE_TIMEOUT_SECONDS = 60;
 
     private final MawConfig config;
     /** How many dispatches are still applying their changes to each instance. */
@@ -39,6 +49,19 @@ public final class TickDispatcher {
         }
         AtomicInteger count = pending.get(instance);
         return count != null && count.get() > 0;
+    }
+
+    /**
+     * One sentence about a failed write, for whoever waited for it (a command shows it to the player). The
+     * failure of a {@link CompletableFuture} is often wrapped: the message of the cause is the useful one.
+     */
+    public static String describeFailure(Throwable failure) {
+        Throwable cause = failure;
+        while ((cause instanceof CompletionException || cause instanceof ExecutionException) && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String message = cause.getMessage();
+        return message != null && !message.isBlank() ? message : cause.getClass().getSimpleName();
     }
 
     /**
@@ -169,11 +192,47 @@ public final class TickDispatcher {
     }
 
     /**
+     * Loads the chunks of this slice, then writes them. A chunk the world will not load stops the operation
+     * with a reason the player can read, instead of a batch that writes the others and says nothing about it.
+     */
+    private CompletableFuture<Void> applyChunkBatch(Instance instance, List<ChunkChangeQueue.ChunkEntry> slice) {
+        if (instance == null) {
+            // No world to load into (an edit session built on a plain block reader): write and see.
+            return writeChunkBatch(instance, slice);
+        }
+        List<ChunkCoordinate> wanted = new ArrayList<>(slice.size());
+        for (ChunkChangeQueue.ChunkEntry entry : slice) {
+            wanted.add(new ChunkCoordinate(entry.chunkX(), entry.chunkZ()));
+        }
+        return ChunkPreloader.ensureLoaded(instance, wanted).thenCompose(missing -> {
+            if (!missing.isEmpty()) {
+                throw new CompletionException(new ChunkNotLoadedException(missing, queuedBlocksOf(slice, missing)));
+            }
+            return writeChunkBatch(instance, slice);
+        });
+    }
+
+    /** How many blocks of this slice are for these chunks (what the player is told was not changed). */
+    private static long queuedBlocksOf(List<ChunkChangeQueue.ChunkEntry> slice, List<ChunkCoordinate> chunks) {
+        Set<Long> wanted = new HashSet<>(chunks.size());
+        for (ChunkCoordinate chunk : chunks) {
+            wanted.add(chunk.pack());
+        }
+        long blocks = 0;
+        for (ChunkChangeQueue.ChunkEntry entry : slice) {
+            if (wanted.contains(ChunkCoordinate.pack(entry.chunkX(), entry.chunkZ()))) {
+                blocks += entry.size();
+            }
+        }
+        return blocks;
+    }
+
+    /**
      * Writes the blocks of these chunks. Minestom applies a batch on its own threads, so the returned future
      * completes when the batch says it is done (and fails if it cannot start, or does not answer in a minute:
      * an instance must never stay "busy" for good).
      */
-    private CompletableFuture<Void> applyChunkBatch(Instance instance, List<ChunkChangeQueue.ChunkEntry> slice) {
+    private CompletableFuture<Void> writeChunkBatch(Instance instance, List<ChunkChangeQueue.ChunkEntry> slice) {
         CompletableFuture<Void> applied = new CompletableFuture<>();
         try {
             DirectBatch batch = new DirectBatch();
@@ -193,6 +252,20 @@ public final class TickDispatcher {
         } catch (RuntimeException | Error failure) {
             applied.completeExceptionally(failure);
         }
-        return applied.orTimeout(60, TimeUnit.SECONDS);
+        return applied
+                .orTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .handle((done, failure) -> explainTimeout(failure));
+    }
+
+    /** A bare timeout says nothing to a player: name the step that never answered. */
+    private static Void explainTimeout(Throwable failure) {
+        if (failure == null) {
+            return null;
+        }
+        Throwable cause = failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+        throw new CompletionException(cause instanceof TimeoutException
+                ? new IllegalStateException("the world did not write these blocks within " + WRITE_TIMEOUT_SECONDS
+                        + " seconds (it may have stopped ticking)", cause)
+                : cause);
     }
 }
