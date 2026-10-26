@@ -2,6 +2,8 @@ package fr.maw;
 
 import fr.maw.guard.EditGuard;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 /**
@@ -18,9 +20,11 @@ public final class MawConfig {
     private final String wandItemNamespace;
     private final int asyncWorkerThreads;
     private final EditGuard editGuard;
+    private final Path schematicsDirectory;
 
     private MawConfig(Builder builder) {
         this.editGuard = Objects.requireNonNull(builder.editGuard, "editGuard cannot be null");
+        this.schematicsDirectory = Objects.requireNonNull(builder.schematicsDirectory, "schematicsDirectory cannot be null");
         this.maxBlocksPerOperation = builder.maxBlocksPerOperation;
         this.maxHistoryPerPlayer = builder.maxHistoryPerPlayer;
         this.timeBudgetPerTickMs = builder.timeBudgetPerTickMs;
@@ -76,8 +80,14 @@ public final class MawConfig {
         return editGuard;
     }
 
+    /** Where {@code //schem} saves and looks for schematics ({@code .maw}, {@code .schem}, {@code .schematic}). */
+    public Path schematicsDirectory() {
+        return schematicsDirectory;
+    }
+
     public static final class Builder {
         private EditGuard editGuard = EditGuard.ALLOW_ALL;
+        private Path schematicsDirectory = Paths.get("schematics");
 
         private int maxBlocksPerOperation = 10_000_000;
         private int maxHistoryPerPlayer = 20;
@@ -133,6 +143,12 @@ public final class MawConfig {
          */
         public Builder editGuard(EditGuard editGuard) {
             this.editGuard = editGuard;
+            return this;
+        }
+
+        /** Sets the folder {@code //schem} uses; defaults to {@code schematics} next to the server. */
+        public Builder schematicsDirectory(Path schematicsDirectory) {
+            this.schematicsDirectory = schematicsDirectory;
             return this;
         }
 

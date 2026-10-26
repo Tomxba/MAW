@@ -1,6 +1,16 @@
 # Commandes de Schématiques et Presse-papier
 
-Ce document détaille l'utilisation des commandes de schématiques (fichiers `.maw`) et du presse-papier étendu dans **MAW (Minestom Async WorldEdit)**.
+Ce document détaille l'utilisation des commandes de schématiques et du presse-papier étendu dans **MAW (Minestom Async WorldEdit)**.
+
+## Dossier et formats
+
+Les schématiques vivent dans un dossier configurable (`MawConfig.schematicsDirectory`, défaut `schematics/` à côté du serveur) ; MAW **écrit son chemin absolu dans le journal au démarrage**, pour savoir où déposer un fichier. `//schem load` et `//schem list` lisent trois formats :
+
+- **`.maw`** — le format texte propre à MAW, écrit par `//schem save`, qui conserve les états de blocs et l'origine relative ;
+- **`.schem`** — le format **Sponge** (versions 2 et 3) que produisent WorldEdit et la plupart des outils : on peut déposer un `.schem` **téléchargé** et le `//schem load`. Un bloc qu'une autre version ne connaît pas devient de l'air plutôt que de faire échouer tout le chargement ;
+- **`.schematic`** — s'il est au format Sponge, il est lu comme un `.schem` ; le vieux format **MCEdit** (identifiants numériques, avant Minecraft 1.13) n'a pas de palette et est refusé avec un message qui invite à le réexporter en `.schem`.
+
+Après un `//schem load`, `//paste` pose la construction (son coin minimum à la position du joueur) ; `//paste -a` ignore l'air du cadre, `//rotate` / `//flip` l'orientent.
 
 ---
 
@@ -16,7 +26,7 @@ Ce document détaille l'utilisation des commandes de schématiques (fichiers `.m
 ## `//schem save`
 *(Alias : `//schematic save`, `/schem save`)*
 
-Sauvegarde le contenu actuel du presse-papier joueur sur le disque sous format optimisé `.maw`.
+Sauvegarde le contenu actuel du presse-papier joueur sur le disque sous le format `.maw` de MAW.
 
 ```text
 //schem save <nom>
@@ -24,7 +34,7 @@ Sauvegarde le contenu actuel du presse-papier joueur sur le disque sous format o
 ```
 
 > [!NOTE]
-> Les schématiques sont sauvegardées dans le répertoire `schematics/` du serveur et conservent toutes les propriétés d'états de blocs et l'origine relative.
+> `//schem save` écrit toujours au format `.maw` (états de blocs et origine relative conservés), dans le dossier des schématiques. Les `.schem` / `.schematic` ne sont que **lus** (déposés à la main), jamais écrits.
 
 ---
 

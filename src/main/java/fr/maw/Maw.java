@@ -47,7 +47,7 @@ public final class Maw {
         this.tickDispatcher = new TickDispatcher(config);
         this.wandListener = new WandListener(config, sessionManager);
         this.toolListener = new fr.maw.listener.ToolListener(sessionManager);
-        this.schematicManager = fr.maw.schematic.SchematicManager.defaultManager();
+        this.schematicManager = new fr.maw.schematic.SchematicManager(config.schematicsDirectory());
     }
 
     /**
@@ -171,6 +171,8 @@ public final class Maw {
 
         enabled = true;
         LOGGER.info("MAW (Minestom Async WorldEdit) enabled successfully with {} commands.", registeredCommands.size());
+        LOGGER.info("MAW schematics directory (//schem load, .maw/.schem/.schematic): {}",
+                config.schematicsDirectory().toAbsolutePath());
     }
 
     /**

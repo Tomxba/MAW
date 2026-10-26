@@ -69,14 +69,37 @@ public final class SchematicManager {
         }
     }
 
+    /** The extensions MAW reads: its own text format, and the Sponge {@code .schem}/{@code .schematic}. */
+    private static final String[] EXTENSIONS = {".maw", ".schem", ".schematic"};
+
     public Clipboard load(String name) throws IOException {
-        String safeName = sanitizeName(name);
-        Path file = directory.resolve(safeName + ".maw");
-
-        if (!Files.exists(file)) {
-            throw new FileNotFoundException("Schematic not found: " + safeName);
+        Path file = resolve(name);
+        if (file == null) {
+            throw new FileNotFoundException("Schematic not found: " + name);
         }
+        String lower = file.getFileName().toString().toLowerCase();
+        if (lower.endsWith(".schem") || lower.endsWith(".schematic")) {
+            return SpongeSchematic.read(file); // WorldEdit/Sponge format
+        }
+        return loadMaw(file);
+    }
 
+    /** The file of a schematic by name, trying each supported extension, the name as typed then sanitized. */
+    private Path resolve(String name) {
+        for (String ext : EXTENSIONS) {
+            Path exact = directory.resolve(name + ext);
+            if (Files.exists(exact)) {
+                return exact;
+            }
+            Path safe = directory.resolve(sanitizeName(name) + ext);
+            if (Files.exists(safe)) {
+                return safe;
+            }
+        }
+        return null;
+    }
+
+    private Clipboard loadMaw(Path file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String header = reader.readLine();
             if (header == null || !header.startsWith("MAW-SCHEM;1;")) {
@@ -117,11 +140,9 @@ public final class SchematicManager {
             if (!Files.exists(directory)) return Collections.emptyList();
             try (var stream = Files.list(directory)) {
                 return stream
-                        .filter(p -> p.getFileName().toString().endsWith(".maw"))
-                        .map(p -> {
-                            String fName = p.getFileName().toString();
-                            return fName.substring(0, fName.length() - 4);
-                        })
+                        .map(p -> baseName(p.getFileName().toString()))
+                        .filter(Objects::nonNull)
+                        .distinct()
                         .sorted()
                         .toList();
             }
@@ -138,6 +159,17 @@ public final class SchematicManager {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /** The name of a supported schematic file without its extension, or {@code null} for any other file. */
+    private static String baseName(String fileName) {
+        String lower = fileName.toLowerCase();
+        for (String ext : EXTENSIONS) {
+            if (lower.endsWith(ext)) {
+                return fileName.substring(0, fileName.length() - ext.length());
+            }
+        }
+        return null;
     }
 
     private String sanitizeName(String name) {
