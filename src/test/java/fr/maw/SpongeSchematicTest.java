@@ -64,6 +64,34 @@ public class SpongeSchematicTest {
     }
 
     @Test
+    @DisplayName("A version-3 .schem (blocks under Schematic/Blocks) is read too")
+    public void should_read_a_sponge_v3(@TempDir Path dir) throws Exception {
+        CompoundBinaryTag palette = CompoundBinaryTag.builder()
+                .putInt("minecraft:air", 0)
+                .putInt("minecraft:oak_log", 1)
+                .build();
+        CompoundBinaryTag blocks = CompoundBinaryTag.builder()
+                .put("Palette", palette)
+                .putByteArray("Data", new byte[]{1, 1, 0, 0}) // oak_log at (0,0,0) and (1,0,0)
+                .build();
+        CompoundBinaryTag schematic = CompoundBinaryTag.builder()
+                .putInt("Version", 3)
+                .putShort("Width", (short) 2).putShort("Height", (short) 2).putShort("Length", (short) 1)
+                .put("Blocks", blocks)
+                .build();
+        CompoundBinaryTag root = CompoundBinaryTag.builder().put("Schematic", schematic).build();
+        Path file = dir.resolve("tree.schem");
+        try (OutputStream out = Files.newOutputStream(file)) {
+            BinaryTagIO.writer().write(root, out, BinaryTagIO.Compression.GZIP);
+        }
+
+        Clipboard clipboard = new SchematicManager(dir).load("tree");
+        assertEquals(4, clipboard.getBlockCount());
+        assertEquals(Block.OAK_LOG, clipboard.getBlocks().get(new Vec(0, 0, 0)));
+        assertEquals(Block.OAK_LOG, clipboard.getBlocks().get(new Vec(1, 0, 0)));
+    }
+
+    @Test
     @DisplayName("A legacy MCEdit .schematic (no palette) is refused with a clear message")
     public void should_refuse_legacy_mcedit(@TempDir Path dir) throws Exception {
         CompoundBinaryTag legacy = CompoundBinaryTag.builder()
